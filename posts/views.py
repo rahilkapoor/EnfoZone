@@ -1,6 +1,7 @@
 from django.db.models import Count, Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect, reverse
+from .forms import CommentForm
 from .models import Post
 
 
@@ -62,7 +63,17 @@ def blog(request):
 
 def post(request, id):
     post = get_object_or_404(Post, id=id)
+    form = CommentForm(request.POST or None)
+    if request.method == "POST":
+        if form.is_valid():
+            form.instance.user = request.user
+            form.instance.post = post
+            form.save()
+            return redirect(reverse("post-detail", kwargs={
+                'id': post.id
+            }))
     context = {
+        'form': form,
         'post': post
     }
     return render(request, 'post.html', context)
